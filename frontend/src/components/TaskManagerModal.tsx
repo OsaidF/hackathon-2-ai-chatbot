@@ -39,7 +39,8 @@ export default function TaskManagerModal({ onClose }: TaskManagerModalProps) {
       }
 
       const queryString = params.toString();
-      const url = `http://localhost:8000/api/v1/tasks${queryString ? `?${queryString}` : ''}`;
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const url = `${apiUrl}${queryString ? `?${queryString}` : ''}`;
 
       const response = await fetch(url, {
         headers: {
