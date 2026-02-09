@@ -181,6 +181,8 @@ async def root():
 
 
 # Global exception handler
+from fastapi.responses import JSONResponse
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     """
@@ -188,11 +190,14 @@ async def global_exception_handler(request, exc):
     """
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
 
-    return {
-        "status": "error",
-        "message": "An unexpected error occurred",
-        "detail": str(exc) if os.getenv("DEBUG") == "true" else "Internal server error"
-    }
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "status": "error",
+            "message": "An unexpected error occurred",
+            "detail": str(exc) if os.getenv("DEBUG") == "true" else "Internal server error"
+        }
+    )
 
 
 # Run with uvicorn if executed directly

@@ -3,6 +3,8 @@ import { Task, TaskUpdateInput, TaskFilter } from '../types/task';
 import { authManager } from '../services/authManager';
 import styles from './TaskManagerModal.module.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 interface TaskManagerModalProps {
   onClose: () => void;
 }
@@ -39,8 +41,7 @@ export default function TaskManagerModal({ onClose }: TaskManagerModalProps) {
       }
 
       const queryString = params.toString();
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-      const url = `${apiUrl}/api/v1/tasks${queryString ? `?${queryString}` : ''}`;
+      const url = `${API_BASE_URL}/api/v1/tasks${queryString ? `?${queryString}` : ''}`;
 
       const response = await fetch(url, {
         headers: {
@@ -142,7 +143,7 @@ export default function TaskManagerModal({ onClose }: TaskManagerModalProps) {
     if (updates.due_date !== undefined) body.due_date = updates.due_date;
     if (updates.tags !== undefined) body.tags = updates.tags;
 
-    const response = await fetch(`http://localhost:8000/api/v1/tasks/${taskId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/tasks/${taskId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -162,7 +163,7 @@ export default function TaskManagerModal({ onClose }: TaskManagerModalProps) {
       throw new Error('Not authenticated');
     }
 
-    const response = await fetch(`http://localhost:8000/api/v1/tasks/${taskId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/tasks/${taskId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,

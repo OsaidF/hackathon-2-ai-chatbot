@@ -44,6 +44,16 @@ async_engine = create_async_engine(
     get_database_url(),
     echo=os.getenv("LOG_LEVEL", "info") == "debug",
     future=True,
+    # Connection pool settings to prevent stale connection errors
+    pool_pre_ping=True,  # Validate connections before use
+    pool_size=5,         # Number of connections to maintain
+    max_overflow=10,     # Additional connections beyond pool_size
+    pool_recycle=3600,   # Recycle connections after 1 hour (prevents timeout issues)
+    connect_args={
+        "timeout": 30,   # Connection timeout in seconds
+        "command_timeout": 30,  # Command timeout in seconds
+        "server_settings": {"application_name": "todo_ai_chatbot"},
+    },
 )
 
 # Async session factory
