@@ -49,6 +49,7 @@ htmlcov/
 # Database
 *.db
 *.sqlite3
+k8s/secrets.yaml
 
 # Logs
 *.log

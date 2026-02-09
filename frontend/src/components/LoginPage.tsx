@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuthContext } from '../contexts/AuthContext';
 import styles from './LoginPage.module.css';
-
 interface LoginPageProps {
   onLoginSuccess: () => void;
 }
@@ -21,7 +20,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
     try {
       const endpoint = isSignup ? '/api/v1/auth/signup' : '/api/v1/auth/login';
-      const response = await fetch(endpoint, {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
