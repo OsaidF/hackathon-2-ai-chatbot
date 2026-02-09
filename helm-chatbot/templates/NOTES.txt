@@ -1,0 +1,49 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }}
+  $ helm get all {{ .Release.Name }}
+
+1. Get the frontend URL by running these commands:
+{{- if .Values.frontend.service.type }}
+  {{- if eq .Values.frontend.service.type "LoadBalancer" }}
+     export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "chatbot.fullname" . }}-frontend-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+     echo http://$SERVICE_IP:{{ .Values.frontend.service.port }}
+  {{- else if eq .Values.frontend.service.type "NodePort" }}
+     export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "chatbot.fullname" . }}-frontend-service)
+     export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+     echo http://$NODE_IP:$NODE_PORT
+  {{- end }}
+{{- end }}
+
+2. Get the backend service URL:
+{{- if .Values.backend.service.type }}
+  {{- if eq .Values.backend.service.type "LoadBalancer" }}
+     export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "chatbot.fullname" . }}-backend-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+     echo http://$SERVICE_IP:{{ .Values.backend.service.port }}
+  {{- else if eq .Values.backend.service.type "ClusterIP" }}
+     export CLUSTER_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "chatbot.fullname" . }}-backend-service -o jsonpath='{.spec.clusterIP}')
+     echo http://$CLUSTER_IP:{{ .Values.backend.service.port }}
+  {{- end }}
+{{- end }}
+
+3. To check the status of your pods:
+   kubectl get pods -n {{ .Release.Namespace }} -l "app.kubernetes.io/instance={{ .Release.Name }}"
+
+4. To view logs:
+   Frontend: kubectl logs -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "chatbot.name" . }},component=frontend"
+   Backend: kubectl logs -n {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "chatbot.name" . }},component=backend"
+
+5. To upgrade your release:
+   helm upgrade {{ .Release.Name }} .
+
+6. To uninstall your release:
+   helm uninstall {{ .Release.Name }}
+
+Security Note:
+- Update the default secrets in values.yaml before deploying to production
+- Use Kubernetes Secrets management or external secret providers for sensitive data
+- Consider using Helm's --set or --set-file to override secrets at deployment time

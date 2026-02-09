@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chatbot.fullname" . }}-frontend-service
+  labels:
+    {{- include "chatbot.labels" . | nindent 4 }}
+    component: frontend
+spec:
+  type: {{ .Values.frontend.service.type }}
+  selector:
+    {{- include "chatbot.selectorLabels" . | nindent 4 }}
+    component: frontend
+  ports:
+  - port: {{ .Values.frontend.service.port }}
+    targetPort: {{ .Values.frontend.service.targetPort }}
+    protocol: TCP
+    name: http

@@ -1,0 +1,71 @@
+# Default values for chatbot Helm chart
+# This is a YAML-formatted file.
+
+# Frontend Configuration
+frontend:
+  name: chatbot-frontend
+  replicas: 1
+  image:
+    repository: chatbot-frontend
+    tag: latest
+    pullPolicy: Never
+
+  service:
+    type: LoadBalancer
+    port: 80
+    targetPort: 80
+
+  resources: {}
+    # limits:
+    #   cpu: 500m
+    #   memory: 512Mi
+    # requests:
+    #   cpu: 250m
+    #   memory: 256Mi
+
+# Backend Configuration
+backend:
+  name: chatbot-backend
+  replicas: 1
+  image:
+    repository: chatbot-backend
+    tag: latest
+    pullPolicy: Never
+
+  service:
+    type: LoadBalancer
+    port: 8000
+    targetPort: 8000
+
+  resources: {}
+    # limits:
+    #   cpu: 1000m
+    #   memory: 1Gi
+    # requests:
+    #   cpu: 500m
+    #   memory: 512Mi
+
+# Secrets (Sensitive Configuration)
+# IMPORTANT: In production, use a secret management solution or Helm --set-file
+secrets:
+  databaseUrl: "postgresql://neondb_owner:npg_tQsV9vHmykh5@ep-nameless-bush-ahtutc9b-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+  openaiApiKey: "AIzaSyA4hTs1hCRWx_kSZiKC6Q2I8YM3k2N1fWQ"
+  openaiBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai/"
+  jwtSecretKey: "your-secret-key-change-this-in-production-use-a-strong-random-string"
+  betterAuthSecret: "super-duper-auth-secret"
+
+# ConfigMap (Non-sensitive Configuration)
+config:
+  openaiModel: "gemini-2.5-flash"
+  accessTokenExpireMinutes: "60"
+  betterAuthUrl: "http://my-chatbot-chatbot-backend-service"
+  environment: "development"
+  skipAuth: "false"
+  corsOrigins: "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:5173,http://localhost"
+  host: "0.0.0.0"
+  port: "8000"
+  logLevel: "INFO"
+
+# Common labels
+labels:
+  app: chatbot

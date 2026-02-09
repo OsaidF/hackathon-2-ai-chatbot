@@ -1,94 +1,101 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: chatbot-backend
+  name: {{ include "chatbot.fullname" . }}-backend
+  labels:
+    {{- include "chatbot.labels" . | nindent 4 }}
+    component: backend
 spec:
-  replicas: 1
+  replicas: {{ .Values.backend.replicas }}
   selector:
     matchLabels:
-      app: chatbot-backend
+      {{- include "chatbot.selectorLabels" . | nindent 6 }}
+      component: backend
   template:
     metadata:
       labels:
-        app: chatbot-backend
+        {{- include "chatbot.selectorLabels" . | nindent 8 }}
+        component: backend
     spec:
       containers:
       - name: backend
-        image: chatbot-backend:latest
-        imagePullPolicy: Never
+        image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
         ports:
-        - containerPort: 8000
+        - containerPort: {{ .Values.backend.service.targetPort }}
         env:
         # Secret variables (sensitive data)
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: chatbot-secrets
+              name: {{ include "chatbot.fullname" . }}-secrets
               key: database-url
         - name: OPENAI_API_KEY
           valueFrom:
             secretKeyRef:
-              name: chatbot-secrets
+              name: {{ include "chatbot.fullname" . }}-secrets
               key: openai-api-key
         - name: OPENAI_BASE_URL
           valueFrom:
             secretKeyRef:
-              name: chatbot-secrets
+              name: {{ include "chatbot.fullname" . }}-secrets
               key: openai-base-url
         - name: JWT_SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: chatbot-secrets
+              name: {{ include "chatbot.fullname" . }}-secrets
               key: jwt-secret-key
         - name: BETTER_AUTH_SECRET
           valueFrom:
             secretKeyRef:
-              name: chatbot-secrets
+              name: {{ include "chatbot.fullname" . }}-secrets
               key: better-auth-secret
 
         # ConfigMap variables (non-sensitive config)
         - name: OPENAI_MODEL
           valueFrom:
             configMapKeyRef:
-              name: chatbot-config
+              name: {{ include "chatbot.fullname" . }}-config
               key: openai-model
         - name: ACCESS_TOKEN_EXPIRE_MINUTES
           valueFrom:
             configMapKeyRef:
-              name: chatbot-config
+              name: {{ include "chatbot.fullname" . }}-config
               key: access-token-expire-minutes
         - name: BETTER_AUTH_URL
           valueFrom:
             configMapKeyRef:
-              name: chatbot-config
+              name: {{ include "chatbot.fullname" . }}-config
               key: better-auth-url
         - name: ENVIRONMENT
           valueFrom:
             configMapKeyRef:
-              name: chatbot-config
+              name: {{ include "chatbot.fullname" . }}-config
               key: environment
         - name: SKIP_AUTH
           valueFrom:
             configMapKeyRef:
-              name: chatbot-config
+              name: {{ include "chatbot.fullname" . }}-config
               key: skip-auth
         - name: CORS_ORIGINS
           valueFrom:
             configMapKeyRef:
-              name: chatbot-config
+              name: {{ include "chatbot.fullname" . }}-config
               key: cors-origins
         - name: HOST
           valueFrom:
             configMapKeyRef:
-              name: chatbot-config
+              name: {{ include "chatbot.fullname" . }}-config
               key: host
         - name: PORT
           valueFrom:
             configMapKeyRef:
-              name: chatbot-config
+              name: {{ include "chatbot.fullname" . }}-config
               key: port
         - name: LOG_LEVEL
           valueFrom:
             configMapKeyRef:
-              name: chatbot-config
+              name: {{ include "chatbot.fullname" . }}-config
               key: log-level
+        resources:
+          {{- toYaml .Values.backend.resources | nindent 10 }}
