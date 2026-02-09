@@ -1,0 +1,240 @@
+# MCP Tools Specification
+# Todo AI Chatbot - Feature 001-todo-ai-chatbot
+# MCP (Model Context Protocol) tool contracts for task operations
+
+api_version: "1.0"
+service: "todo-mcp-server"
+transport: "stdio"
+
+tools:
+  # Tool 1: Add Task
+  - name: "add_task"
+    description: "Create a new todo task for a user. Accepts a task title and creates an uncompleted task. Returns the created task with its ID and status."
+    parameters:
+      - name: "user_id"
+        type: "string"
+        required: true
+        description: "Unique identifier of the user (UUID format). Used for multi-tenancy and data isolation."
+      - name: "title"
+        type: "string"
+        required: true
+        description: "The task title/description. What the user needs to do."
+        constraints:
+          minLength: 1
+          maxLength: 500
+    returns:
+      type: "object"
+      description: "Created task confirmation"
+      schema:
+        task_id: "string (UUID)"
+        status: "string (enum: created)"
+        title: "string"
+        completed: "boolean"
+        created_at: "string (ISO 8601 timestamp)"
+    errors:
+      - code: "INVALID_USER_ID"
+        description: "user_id is not a valid UUID or does not exist"
+      - code: "INVALID_TITLE"
+        description: "title is empty or exceeds maximum length"
+      - code: "DATABASE_ERROR"
+        description: "Failed to create task due to database error"
+    examples:
+      - input:
+          user_id: "550e8400-e29b-41d4-a716-446655440000"
+          title: "Buy groceries"
+        output:
+          task_id: "123e4567-e89b-12d3-a456-426614174000"
+          status: "created"
+          title: "Buy groceries"
+          completed: false
+          created_at: "2025-01-24T10:30:00Z"
+
+  # Tool 2: List Tasks
+  - name: "list_tasks"
+    description: "Retrieve all tasks for a specific user. Optionally filter by completion status. Returns an array of tasks with their current status."
+    parameters:
+      - name: "user_id"
+        type: "string"
+        required: true
+        description: "Unique identifier of the user (UUID format). Only returns tasks belonging to this user."
+      - name: "filter_completed"
+        type: "boolean"
+        required: false
+        description: "Optional filter for completion status. If true, returns only completed tasks. If false, returns only uncompleted tasks. If not provided, returns all tasks."
+    returns:
+      type: "object"
+      description: "List of tasks belonging to the user"
+      schema:
+        tasks:
+          - type: "object"
+            task_id: "string (UUID)"
+            title: "string"
+            completed: "boolean"
+            created_at: "string (ISO 8601 timestamp)"
+            updated_at: "string (ISO 8601 timestamp)"
+        count: "integer"
+    errors:
+      - code: "INVALID_USER_ID"
+        description: "user_id is not a valid UUID or does not exist"
+      - code: "DATABASE_ERROR"
+        description: "Failed to retrieve tasks due to database error"
+    examples:
+      - input:
+          user_id: "550e8400-e29b-41d4-a716-446655440000"
+        output:
+          tasks:
+            - task_id: "123e4567-e89b-12d3-a456-426614174000"
+              title: "Buy groceries"
+              completed: false
+              created_at: "2025-01-24T10:30:00Z"
+              updated_at: "2025-01-24T10:30:00Z"
+            - task_id: "223e4567-e89b-12d3-a456-426614174001"
+              title: "Call dentist"
+              completed: true
+              created_at: "2025-01-23T14:20:00Z"
+              updated_at: "2025-01-24T09:15:00Z"
+          count: 2
+
+  # Tool 3: Complete Task
+  - name: "complete_task"
+    description: "Mark a specific task as completed. Changes the task status from uncompleted to completed. Idempotent operation - completing an already-completed task succeeds without error."
+    parameters:
+      - name: "user_id"
+        type: "string"
+        required: true
+        description: "Unique identifier of the user (UUID format). Must match the task owner."
+      - name: "task_id"
+        type: "string"
+        required: true
+        description: "Unique identifier of the task to complete (UUID format)."
+    returns:
+      type: "object"
+      description: "Task completion confirmation"
+      schema:
+        task_id: "string (UUID)"
+        status: "string (enum: completed)"
+        title: "string"
+        completed: "boolean"
+        updated_at: "string (ISO 8601 timestamp)"
+    errors:
+      - code: "INVALID_USER_ID"
+        description: "user_id is not a valid UUID or does not exist"
+      - code: "INVALID_TASK_ID"
+        description: "task_id is not a valid UUID"
+      - code: "TASK_NOT_FOUND"
+        description: "Task does not exist or belongs to a different user"
+      - code: "DATABASE_ERROR"
+        description: "Failed to update task due to database error"
+    examples:
+      - input:
+          user_id: "550e8400-e29b-41d4-a716-446655440000"
+          task_id: "123e4567-e89b-12d3-a456-426614174000"
+        output:
+          task_id: "123e4567-e89b-12d3-a456-426614174000"
+          status: "completed"
+          title: "Buy groceries"
+          completed: true
+          updated_at: "2025-01-24T11:00:00Z"
+
+  # Tool 4: Delete Task
+  - name: "delete_task"
+    description: "Permanently remove a task from the database. This operation cannot be undone. Task must belong to the specified user."
+    parameters:
+      - name: "user_id"
+        type: "string"
+        required: true
+        description: "Unique identifier of the user (UUID format). Must match the task owner."
+      - name: "task_id"
+        type: "string"
+        required: true
+        description: "Unique identifier of the task to delete (UUID format)."
+    returns:
+      type: "object"
+      description: "Task deletion confirmation"
+      schema:
+        task_id: "string (UUID)"
+        status: "string (enum: deleted)"
+        title: "string"
+    errors:
+      - code: "INVALID_USER_ID"
+        description: "user_id is not a valid UUID or does not exist"
+      - code: "INVALID_TASK_ID"
+        description: "task_id is not a valid UUID"
+      - code: "TASK_NOT_FOUND"
+        description: "Task does not exist or belongs to a different user"
+      - code: "DATABASE_ERROR"
+        description: "Failed to delete task due to database error"
+    examples:
+      - input:
+          user_id: "550e8400-e29b-41d4-a716-446655440000"
+          task_id: "123e4567-e89b-12d3-a456-426614174000"
+        output:
+          task_id: "123e4567-e89b-12d3-a456-426614174000"
+          status: "deleted"
+          title: "Buy groceries"
+
+  # Tool 5: Update Task
+  - name: "update_task"
+    description: "Modify the title of an existing task. The user_id must match the task owner. Automatically updates the updated_at timestamp."
+    parameters:
+      - name: "user_id"
+        type: "string"
+        required: true
+        description: "Unique identifier of the user (UUID format). Must match the task owner."
+      - name: "task_id"
+        type: "string"
+        required: true
+        description: "Unique identifier of the task to update (UUID format)."
+      - name: "new_title"
+        type: "string"
+        required: true
+        description: "The new task title. Replaces the existing title."
+        constraints:
+          minLength: 1
+          maxLength: 500
+    returns:
+      type: "object"
+      description: "Task update confirmation"
+      schema:
+        task_id: "string (UUID)"
+        status: "string (enum: updated)"
+        title: "string"
+        completed: "boolean"
+        updated_at: "string (ISO 8601 timestamp)"
+    errors:
+      - code: "INVALID_USER_ID"
+        description: "user_id is not a valid UUID or does not exist"
+      - code: "INVALID_TASK_ID"
+        description: "task_id is not a valid UUID"
+      - code: "TASK_NOT_FOUND"
+        description: "Task does not exist or belongs to a different user"
+      - code: "INVALID_TITLE"
+        description: "new_title is empty or exceeds maximum length"
+      - code: "DATABASE_ERROR"
+        description: "Failed to update task due to database error"
+    examples:
+      - input:
+          user_id: "550e8400-e29b-41d4-a716-446655440000"
+          task_id: "123e4567-e89b-12d3-a456-426614174000"
+          new_title: "Buy groceries and cook dinner"
+        output:
+          task_id: "123e4567-e89b-12d3-a456-426614174000"
+          status: "updated"
+          title: "Buy groceries and cook dinner"
+          completed: false
+          updated_at: "2025-01-24T11:30:00Z"
+
+# Tool Invocation Flow
+# When agent receives user message:
+# 1. Parse intent and extract parameters
+# 2. Select appropriate tool based on intent
+# 3. Invoke tool with parameters (including user_id)
+# 4. Receive structured response
+# 5. Generate natural language confirmation message
+
+# Constitution Compliance Notes:
+# - All tools accept user_id for multi-tenancy (Principle III: Database as Single Source of Truth)
+# - All tools are stateless (query database directly, no in-memory state)
+# - All tools return structured JSON per contract standards
+# - All tools include error responses with code and description
+# - Status values standardized: created, updated, completed, deleted

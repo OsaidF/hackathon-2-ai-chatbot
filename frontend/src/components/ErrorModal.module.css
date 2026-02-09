@@ -1,0 +1,201 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-md);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.errorDialog {
+  background-color: var(--color-background-primary);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  max-width: 450px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.errorIcon {
+  color: var(--color-error);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.errorTitle {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.errorMessage {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-lg) 0;
+  line-height: 1.6;
+}
+
+.errorActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  width: 100%;
+  justify-content: center;
+}
+
+.retryButton,
+.dismissButton {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+  min-width: 100px;
+}
+
+.retryButton {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.retryButton:hover {
+  background-color: var(--color-primary-hover);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.retryButton:active {
+  transform: translateY(1px);
+}
+
+.dismissButton {
+  background-color: var(--color-background-secondary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.dismissButton:hover {
+  background-color: var(--color-background-hover);
+  border-color: var(--color-border-hover);
+}
+
+.dismissButton:active {
+  transform: translateY(1px);
+}
+
+/* Tablet Styles */
+@media (min-width: 768px) {
+  .errorDialog {
+    max-width: 500px;
+    padding: var(--spacing-2xl);
+  }
+
+  .errorTitle {
+    font-size: var(--font-size-2xl);
+  }
+
+  .errorMessage {
+    font-size: var(--font-size-lg);
+  }
+
+  .errorActions {
+    justify-content: center;
+  }
+
+  .retryButton,
+  .dismissButton {
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: var(--font-size-lg);
+  }
+}
+
+/* Desktop Styles */
+@media (min-width: 1024px) {
+  .errorDialog {
+    max-width: 550px;
+  }
+
+  .retryButton:hover,
+  .dismissButton:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Mobile Styles */
+@media (max-width: 767px) {
+  .modalOverlay {
+    padding: var(--spacing-sm);
+  }
+
+  .errorDialog {
+    padding: var(--spacing-lg);
+    max-width: calc(100vw - var(--spacing-md));
+  }
+
+  .errorIcon svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .errorTitle {
+    font-size: var(--font-size-lg);
+  }
+
+  .errorMessage {
+    font-size: var(--font-size-sm);
+  }
+
+  .errorActions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .retryButton,
+  .dismissButton {
+    width: 100%;
+    padding: var(--spacing-md);
+  }
+
+  /* Stack buttons on mobile with retry on top */
+  .retryButton {
+    order: 1;
+  }
+
+  .dismissButton {
+    order: 2;
+  }
+}

@@ -1,0 +1,313 @@
+openapi: 3.0.3
+info:
+  title: Todo AI Chatbot API
+  description: |
+    Chat endpoint for conversational task management using AI agent and MCP tools.
+
+    **Key Features**:
+    - Natural language interface (no command syntax required)
+    - Conversation continuity across requests (stateless architecture)
+    - Multi-user support with data isolation
+    - AI agent interprets intent and selects appropriate MCP tools
+
+    **Architecture**:
+    - Stateless: All conversation state persisted to database
+    - MCP-First: All task operations through MCP tools only
+    - Agent: OpenAI Agents SDK for intent recognition and tool selection
+  version: 1.0.0
+  contact:
+    name: Todo AI Chatbot Team
+    email: dev@example.com
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.todo-chatbot.example.com
+    description: Production server
+
+tags:
+  - name: chat
+    description: Chat endpoint operations
+  - name: health
+    description: Health check endpoints
+
+paths:
+  /api/v1/chat:
+    post:
+      summary: Send message to AI chatbot
+      description: |
+        Processes a natural language message through the AI agent, which interprets intent
+        and invokes appropriate MCP tools for task operations. Maintains conversation context
+        across requests using conversation_id.
+
+        **Behavior**:
+        - If conversation_id provided: Load existing conversation history
+        - If conversation_id omitted: Create new conversation automatically
+        - Agent receives full conversation context (history + new message)
+        - Agent selects and invokes MCP tools based on intent
+        - Both user message and agent response saved to database
+        - Returns conversation_id for frontend to maintain context
+
+        **Stateless Architecture**:
+        - No in-memory conversation state
+        - Conversation history loaded from database on each request
+        - Any server instance can handle any request
+      operationId: chat
+      tags:
+        - chat
+      security:
+        - BetterAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  description: The user's natural language message
+                  minLength: 1
+                  maxLength: 10000
+                  example: "Add a task to buy groceries"
+                conversation_id:
+                  type: string
+                  format: uuid
+                  description: |
+                    Optional conversation identifier. If provided, loads existing conversation.
+                    If omitted, creates new conversation and returns new conversation_id.
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Successful message processing
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - conversation_id
+                  - response
+                  - role
+                properties:
+                  conversation_id:
+                    type: string
+                    format: uuid
+                    description: |
+                      Conversation identifier. Always returned. Frontend should store this
+                      and include it in subsequent requests to maintain conversation context.
+                  response:
+                    type: string
+                    description: The AI agent's natural language response
+                    example: "I've created the task 'Buy groceries' for you."
+                  role:
+                    type: string
+                    enum: [assistant]
+                    description: Message role (always 'assistant' for responses)
+                  message_id:
+                    type: string
+                    format: uuid
+                    description: Unique identifier of the assistant's response message
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp when the response was created
+                    example: "2025-01-24T10:30:00Z"
+              examples:
+                new_conversation:
+                  summary: Creating a new conversation
+                  value:
+                    conversation_id: "550e8400-e29b-41d4-a716-446655440000"
+                    response: "I've created the task 'Buy groceries' for you."
+                    role: "assistant"
+                    message_id: "223e4567-e89b-12d3-a456-426614174001"
+                    created_at: "2025-01-24T10:30:00Z"
+                existing_conversation:
+                  summary: Continuing an existing conversation
+                  value:
+                    conversation_id: "550e8400-e29b-41d4-a716-446655440000"
+                    response: "You have 3 tasks: Buy groceries, Call dentist, and Finish presentation."
+                    role: "assistant"
+                    message_id: "223e4567-e89b-12d3-a456-426614174002"
+                    created_at: "2025-01-24T10:31:00Z"
+        '400':
+          description: Bad request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                empty_message:
+                  summary: Empty message
+                  value:
+                    error: "Message cannot be empty"
+                    code: "EMPTY_MESSAGE"
+                invalid_uuid:
+                  summary: Invalid conversation_id format
+                  value:
+                    error: "conversation_id must be a valid UUID"
+                    code: "INVALID_UUID"
+        '401':
+          description: Unauthorized (authentication required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Authentication required"
+                code: "UNAUTHORIZED"
+        '404':
+          description: Not found (conversation doesn't exist or belongs to different user)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conversation not found"
+                code: "CONVERSATION_NOT_FOUND"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal server error"
+                code: "INTERNAL_ERROR"
+
+  /api/v1/health:
+    get:
+      summary: Health check endpoint
+      description: |
+        Returns service health status. Used for monitoring and load balancer checks.
+        Verifies database connectivity and MCP server availability.
+      operationId: healthCheck
+      tags:
+        - health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - timestamp
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-01-24T10:30:00Z"
+                  database:
+                    type: string
+                    enum: [connected, disconnected]
+                    example: "connected"
+                  mcp_server:
+                    type: string
+                    enum: [running, stopped]
+                    example: "running"
+        '503':
+          description: Service is unhealthy (database or MCP server unavailable)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [unhealthy]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  database:
+                    type: string
+                    enum: [connected, disconnected, error]
+                  mcp_server:
+                    type: string
+                    enum: [running, stopped, error]
+                  error:
+                    type: string
+                    example: "Database connection failed"
+
+components:
+  securitySchemes:
+    BetterAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Better Auth JWT token. The token contains user_id in claims.
+        All endpoints require authentication unless explicitly marked as public.
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          description: Human-readable error message describing what went wrong
+          example: "Conversation not found"
+        code:
+          type: string
+          description: Machine-readable error code for programmatic handling
+          example: "CONVERSATION_NOT_FOUND"
+        details:
+          type: string
+          description: Additional error details (optional)
+          example: "Conversation ID 123 does not exist or belongs to different user"
+
+  examples:
+    task_operations:
+      create_task:
+        message: "Add a task to buy groceries"
+      list_tasks:
+        message: "Show my tasks"
+      complete_task:
+        message: "Mark buy groceries as complete"
+      delete_task:
+        message: "Delete the buy groceries task"
+      update_task:
+        message: "Change buy groceries to buy groceries and cook dinner"
+      natural_language_variations:
+        - message: "Remember to call the dentist"
+        - message: "I need to finish the quarterly report"
+        - message: "Create todo: submit expense report"
+        - message: "Don't forget to renew car insurance"
+
+# Architecture Notes
+#
+# Stateless Design:
+# - No in-memory conversation state
+# - Conversation history retrieved from database on each request
+# - Server restart does not lose conversation context
+# - Any server instance can handle any request (horizontal scaling)
+#
+# Request Flow:
+# 1. User sends message (with optional conversation_id)
+# 2. Backend authenticates request (extracts user_id from JWT)
+# 3. Load conversation history from database (if conversation_id provided)
+# 4. Create conversation (if conversation_id not provided)
+# 5. Save user message to database
+# 6. Pass message + history to OpenAI Agents SDK
+# 7. Agent selects appropriate MCP tool based on intent
+# 8. MCP tool executes (queries database directly)
+# 9. Tool result returned to agent
+# 10. Agent generates natural language response
+# 11. Save agent response to database
+# 12. Return response + conversation_id to frontend
+#
+# Constitution Compliance:
+# - Principle I (Stateless): ✅ No in-memory state
+# - Principle II (MCP-First): ✅ All task operations through MCP tools
+# - Principle III (Database as Single Source of Truth): ✅ All state in PostgreSQL
+# - Principle V (Natural Language Interface): ✅ AI agent interprets all commands
+# - Principle VII (Conversation Continuity): ✅ Conversations persisted via conversation_id

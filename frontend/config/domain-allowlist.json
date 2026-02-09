@@ -1,0 +1,8 @@
+{
+  "allowed_domains": [
+    "localhost:8000",
+    "127.0.0.1:8000"
+  ],
+  "description": "Domain allowlist for OpenAI ChatKit frontend configuration",
+  "note": "Add production domains here when deployed"
+}

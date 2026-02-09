@@ -1,0 +1,15 @@
+.app {
+  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-background-secondary);
+  overflow: hidden;
+}
+
+/* Mobile full-screen optimization */
+@media (max-width: 768px) {
+  .app {
+    height: 100dvh; /* Use dynamic viewport height on mobile */
+  }
+}
